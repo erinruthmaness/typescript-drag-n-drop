@@ -15,15 +15,26 @@ class Project {
     ) {}
 }
 
-type Listener = (items: Project[]) => void;
+type Listener<T> = (items: T[]) => void;
 
 //state management
-class ProjectState {
-    private listeners: Listener[] = [];
+abstract class State<T> {
+    protected listeners: Listener<T>[] = [];
+
+    addListener(listenerFn: Listener<T>) {
+        this.listeners.push(listenerFn);
+    }
+
+    constructor() {}
+}
+
+class ProjectState extends State<Project> {
     private projects: Project[] = [];
     private static instance: ProjectState; //singleton pattern
 
-    private constructor() {}
+    private constructor() {
+        super();
+    }
 
     //singleton pattern
     static getInstance(): ProjectState {
@@ -31,10 +42,6 @@ class ProjectState {
             this.instance = new ProjectState();
         }
         return this.instance;
-    }
-
-    addListener(listenerFn: Listener) {
-        this.listeners.push(listenerFn);
     }
 
     addProject(title: string, description: string, numPeople: number) {
@@ -123,6 +130,31 @@ abstract class Component<T extends HTMLElement, U extends HTMLElement> {
     abstract renderContent(): void;
 }
 
+//output list item class
+class OutputListItem extends Component<HTMLUListElement, HTMLLIElement> {
+    get numPeopleText() {
+        return `Number of People: ${this.project.people.toString()}`;
+    }
+
+    constructor(parentListId: string, private project: Project) {
+        super("single-project", parentListId, `project-item-${project.id}`);
+
+        this.renderContent();
+    }
+
+    configure() {}
+
+    renderContent() {
+        this.baseElement.querySelector("h2")!.textContent = this.project.title;
+        this.baseElement.querySelector("h3")!.textContent = this.numPeopleText;
+
+        this.baseElement.querySelector("p")!.textContent = this.project.description;
+        const prjDescLabel = document.createElement("h3") as HTMLHeadingElement;
+        prjDescLabel.textContent = "Description:";
+        this.baseElement.querySelector("p")!.prepend(prjDescLabel);
+    }
+}
+
 //output list class
 class OutputList extends Component<HTMLDivElement, HTMLElement> {
     projectList: Project[];
@@ -160,9 +192,7 @@ class OutputList extends Component<HTMLDivElement, HTMLElement> {
         const listEl = document.getElementById(this.listId)!;
         listEl.innerHTML = "";
         for (const prj of this.projectList) {
-            const listItem = document.createElement("li");
-            listItem.textContent = prj.title;
-            listEl?.appendChild(listItem);
+            new OutputListItem(this.listId, prj);
         }
     }
 }
