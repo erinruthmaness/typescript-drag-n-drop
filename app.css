@@ -10,11 +10,16 @@ body {
   margin: 0;
 }
 
+#app {
+  max-width: 40rem;
+  margin: 2rem auto;
+}
+
 label,
 input,
 textarea {
   display: block;
-  margin: 0.5rem 0;
+  margin: 0.5rem auto;
 }
 
 label {
@@ -37,6 +42,8 @@ textarea:focus {
 }
 
 button {
+  display: block;
+  margin: 1em auto;
   font: inherit;
   background: #ff0062;
   border: 1px solid #ff0062;

@@ -1,3 +1,52 @@
+//custom types
+enum ProjectStatus {
+    Active,
+    Finished,
+}
+
+//using a class (not interface etc) so it can be instantiated
+class Project {
+    constructor(
+        public id: string,
+        public title: string,
+        public description: string,
+        public people: number,
+        public status: ProjectStatus
+    ) {}
+}
+
+type Listener = (items: Project[]) => void;
+
+//state management
+class ProjectState {
+    private listeners: Listener[] = [];
+    private projects: Project[] = [];
+    private static instance: ProjectState; //singleton pattern
+
+    private constructor() {}
+
+    //singleton pattern
+    static getInstance(): ProjectState {
+        if (!this.instance) {
+            this.instance = new ProjectState();
+        }
+        return this.instance;
+    }
+
+    addListener(listenerFn: Listener) {
+        this.listeners.push(listenerFn);
+    }
+
+    addProject(title: string, description: string, numPeople: number) {
+        const newProject = new Project(Math.random().toString(), title, description, numPeople, ProjectStatus.Active);
+
+        this.projects.push(newProject);
+        for (const listenerFn of this.listeners) {
+            listenerFn(this.projects.slice()); //pass a copy of the state array to the listener
+        }
+    }
+}
+
 //validation
 interface ValidationParams {
     value: string | number;
@@ -45,6 +94,59 @@ function autobind(_target: any, _methodName: string, descriptor: PropertyDescrip
         },
     };
     return adjustedDescriptor; //replaces the original descriptor with this one
+}
+
+//output list class
+class OutputList {
+    templateElement: HTMLTemplateElement;
+    rootElement: HTMLDivElement;
+    listElement: HTMLElement; //it's a <section />
+    assignedProjects: Project[];
+
+    get listTypeText() {
+        return this.listType === ProjectStatus.Active ? "active" : "finished";
+    }
+
+    get listId() {
+        return `${this.listTypeText}-projects-list`;
+    }
+
+    constructor(private listType: ProjectStatus) {
+        this.templateElement = document.getElementById("project-list")! as HTMLTemplateElement;
+        this.rootElement = document.getElementById("app")! as HTMLDivElement;
+        this.assignedProjects = [];
+
+        const importedNode = document.importNode(this.templateElement.content, true);
+        this.listElement = importedNode.firstElementChild as HTMLElement;
+        this.listElement.id = `${this.listTypeText}-projects`;
+
+        projectsStore.addListener((projectsList: Project[]) => {
+            this.assignedProjects = projectsList.filter((prj) => prj.status === this.listType);
+            this.renderProjects();
+        });
+
+        this.attachList();
+        this.renderListContent();
+    }
+
+    private renderProjects() {
+        const listEl = document.getElementById(this.listId)!;
+        listEl.innerHTML = "";
+        for (const prj of this.assignedProjects) {
+            const listItem = document.createElement("li");
+            listItem.textContent = prj.title;
+            listEl?.appendChild(listItem);
+        }
+    }
+
+    private attachList() {
+        this.rootElement.insertAdjacentElement("beforeend", this.listElement);
+    }
+
+    private renderListContent() {
+        this.listElement.querySelector("ul")!.id = this.listId;
+        this.listElement.querySelector("h2")!.textContent = `${this.listTypeText.toUpperCase()} PROJECTS`;
+    }
 }
 
 //main form class
@@ -112,8 +214,7 @@ class MainForm {
         e.preventDefault();
 
         if (Array.isArray(this.userInput)) {
-            const [title, desc, people] = this.userInput;
-            console.log(title, desc, people);
+            projectsStore.addProject(...this.userInput);
             this.clearInputs();
         }
     }
@@ -127,4 +228,9 @@ class MainForm {
     }
 }
 
+//instantiate project state
+const projectsStore = ProjectState.getInstance();
+//render to the DOM
 const prjInput = new MainForm();
+const prjList_active = new OutputList(ProjectStatus.Active);
+const prjList_finished = new OutputList(ProjectStatus.Finished);
