@@ -4,6 +4,17 @@ enum ProjectStatus {
     Finished,
 }
 
+interface Draggable {
+    dragStartHandler(event: DragEvent): void;
+    dragEndHandler(event: DragEvent): void;
+}
+
+interface DragTarget {
+    dragOverHandler(event: DragEvent): void;
+    dropHandler(event: DragEvent): void;
+    dragLeaveHandler(event: DragEvent): void;
+}
+
 //using a class (not interface etc) so it can be instantiated
 class Project {
     constructor(
@@ -23,6 +34,12 @@ abstract class State<T> {
 
     addListener(listenerFn: Listener<T>) {
         this.listeners.push(listenerFn);
+    }
+
+    updateListeners(stateCopy: T[]) {
+        for (const listenerFn of this.listeners) {
+            listenerFn(stateCopy);
+        }
     }
 
     constructor() {}
@@ -48,9 +65,19 @@ class ProjectState extends State<Project> {
         const newProject = new Project(Math.random().toString(), title, description, numPeople, ProjectStatus.Active);
 
         this.projects.push(newProject);
-        for (const listenerFn of this.listeners) {
-            listenerFn(this.projects.slice()); //pass a copy of the state array to the listener
+        this.updateProjectListeners();
+    }
+
+    moveProject(id: string, newStatus: ProjectStatus) {
+        const prj = this.projects.find((p) => p.id === id);
+        if (prj && prj.status !== newStatus) {
+            prj.status = newStatus;
+            this.updateProjectListeners();
         }
+    }
+
+    private updateProjectListeners() {
+        this.updateListeners(this.projects.slice());
     }
 }
 
@@ -131,7 +158,7 @@ abstract class Component<T extends HTMLElement, U extends HTMLElement> {
 }
 
 //output list item class
-class OutputListItem extends Component<HTMLUListElement, HTMLLIElement> {
+class OutputListItem extends Component<HTMLUListElement, HTMLLIElement> implements Draggable {
     get numPeopleText() {
         return `Number of People: ${this.project.people.toString()}`;
     }
@@ -139,10 +166,22 @@ class OutputListItem extends Component<HTMLUListElement, HTMLLIElement> {
     constructor(parentListId: string, private project: Project) {
         super("single-project", parentListId, `project-item-${project.id}`);
 
+        this.configure();
         this.renderContent();
     }
 
-    configure() {}
+    @autobind
+    dragStartHandler(event: DragEvent) {
+        event.dataTransfer!.setData("text/plain", this.project.id);
+        event.dataTransfer!.effectAllowed = "move";
+    }
+
+    dragEndHandler(_event: DragEvent) {}
+
+    configure() {
+        this.baseElement.addEventListener("dragstart", this.dragStartHandler);
+        this.baseElement.addEventListener("dragend", this.dragEndHandler);
+    }
 
     renderContent() {
         this.baseElement.querySelector("h2")!.textContent = this.project.title;
@@ -156,7 +195,7 @@ class OutputListItem extends Component<HTMLUListElement, HTMLLIElement> {
 }
 
 //output list class
-class OutputList extends Component<HTMLDivElement, HTMLElement> {
+class OutputList extends Component<HTMLDivElement, HTMLElement> implements DragTarget {
     projectList: Project[];
 
     get listTypeText() {
@@ -176,6 +215,27 @@ class OutputList extends Component<HTMLDivElement, HTMLElement> {
         this.renderContent();
     }
 
+    @autobind
+    dragOverHandler(event: DragEvent) {
+        if (event.dataTransfer && event.dataTransfer.types[0] === "text/plain") {
+            event.preventDefault();
+            const listEl = this.baseElement.querySelector("ul")!;
+            listEl.classList.add("droppable");
+        }
+    }
+
+    @autobind
+    dropHandler(event: DragEvent) {
+        const droppedProjectId = event.dataTransfer!.getData("text/plain");
+        projectsStore.moveProject(droppedProjectId, this.listType);
+    }
+
+    @autobind
+    dragLeaveHandler(_event: DragEvent) {
+        const listEl = this.baseElement.querySelector("ul")!;
+        listEl.classList.remove("droppable");
+    }
+
     renderContent() {
         this.baseElement.querySelector("ul")!.id = this.listId;
         this.baseElement.querySelector("h2")!.textContent = `${this.listTypeText.toUpperCase()} PROJECTS`;
@@ -186,6 +246,10 @@ class OutputList extends Component<HTMLDivElement, HTMLElement> {
             this.projectList = projectsList.filter((prj) => prj.status === this.listType);
             this.renderProjects();
         });
+
+        this.baseElement.addEventListener("dragover", this.dragOverHandler);
+        this.baseElement.addEventListener("dragleave", this.dragLeaveHandler);
+        this.baseElement.addEventListener("drop", this.dropHandler);
     }
 
     private renderProjects() {

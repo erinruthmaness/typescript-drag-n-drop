@@ -95,9 +95,19 @@ button:active {
 }
 
 .projects li {
+  background-color: white;
   box-shadow: 1px 1px 8px rgba(0, 0, 0, 0.26);
   padding: 1rem;
   margin: 1rem;
+}
+
+.projects li:hover[draggable='true'] {
+  cursor: move;
+  cursor: grab;
+}
+
+.projects li:active[draggable='true'] {
+  cursor: grabbing;
 }
 
 .projects li h2 {
