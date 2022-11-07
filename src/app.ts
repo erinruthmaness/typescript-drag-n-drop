@@ -1,10 +1,8 @@
-/// <reference path="components/project-input.ts" />
-/// <reference path="components/project-output.ts" />
-/// <reference path="models/project.ts" />
+import { MainForm } from "./components/project-input.js";
+import { OutputList } from "./components/project-output.js";
+import { ProjectStatus } from "./models/project.js";
 
-namespace App {
-    //render to the DOM
-    new MainForm();
-    new OutputList(ProjectStatus.Active);
-    new OutputList(ProjectStatus.Finished);
-}
+//render to the DOM
+new MainForm();
+new OutputList(ProjectStatus.Active);
+new OutputList(ProjectStatus.Finished);
