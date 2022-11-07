@@ -1,3 +1,4 @@
+import "reflect-metadata";
 import { MainForm } from "./components/project-input";
 import { OutputList } from "./components/project-output";
 import { ProjectStatus } from "./models/project";

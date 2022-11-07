@@ -69,6 +69,7 @@
   "include": [
     "dist",
     "src/**.ts", 
-    "src/*/**.ts"
+    "src/*/**.ts",
+    "index.d.ts" 
   ]
 }

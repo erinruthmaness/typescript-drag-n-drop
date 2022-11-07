@@ -43,7 +43,7 @@ export class OutputListItem extends Component<HTMLUListElement, HTMLLIElement> i
 
 //output list class
 export class OutputList extends Component<HTMLDivElement, HTMLElement> implements DragTarget {
-    projectList: Project[];
+    projectList: Project[] = [];
 
     get listTypeText() {
         return this.listType === ProjectStatus.Active ? "active" : "finished";
@@ -56,7 +56,6 @@ export class OutputList extends Component<HTMLDivElement, HTMLElement> implement
     constructor(private listType: ProjectStatus) {
         const listTypeText = listType === ProjectStatus.Active ? "active" : "finished";
         super("project-list", "app", `${listTypeText}-projects`, false);
-        this.projectList = [];
 
         this.configure();
         this.renderContent();
@@ -86,17 +85,23 @@ export class OutputList extends Component<HTMLDivElement, HTMLElement> implement
     renderContent() {
         this.baseElement.querySelector("ul")!.id = this.listId;
         this.baseElement.querySelector("h2")!.textContent = `${this.listTypeText.toUpperCase()} PROJECTS`;
+        this.updateProjectList(projectsStore.current);
     }
 
     configure() {
-        projectsStore.addListener((projectsList: Project[]) => {
-            this.projectList = projectsList.filter((prj) => prj.status === this.listType);
-            this.renderProjects();
+        projectsStore.addListener((allProjects: Project[]) => {
+            this.updateProjectList(allProjects);
         });
 
         this.baseElement.addEventListener("dragover", this.dragOverHandler);
         this.baseElement.addEventListener("dragleave", this.dragLeaveHandler);
         this.baseElement.addEventListener("drop", this.dropHandler);
+    }
+
+    @autobind
+    private updateProjectList(newProjectList: Project[]) {
+        this.projectList = newProjectList.filter((prj: Project) => prj.status === this.listType);
+        this.renderProjects();
     }
 
     private renderProjects() {

@@ -6,7 +6,20 @@ module.exports = {
     output: {
         filename: "bundle.js",
         path: path.resolve(__dirname, "dist"),
-        publicPath: "dist",
+        publicPath: "/dist",
+    },
+    devServer: {
+        onListening: (devServer) => {
+            if (!devServer) {
+                throw new Error("webpack-dev-server is not defined");
+            }
+            console.log(`DevServer listening on port: ${devServer.server.address().port}`);
+        },
+        open: true,
+        port: 3000,
+        static: {
+            directory: path.join(__dirname, "/"),
+        },
     },
     devtool: "inline-source-map",
     module: {

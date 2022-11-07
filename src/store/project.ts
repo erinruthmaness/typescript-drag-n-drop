@@ -1,16 +1,25 @@
 import _ from "lodash";
+import { plainToInstance } from "class-transformer";
 
 import { State } from "../models/state";
 import { Project, ProjectStatus } from "../models/project";
 
-// declare var _: any;  //if you can't install @types but you know the js will work
+import fakeAPIdata from "../util/fakeAPIdata";
+
+const loadedProjects: Project[] = plainToInstance(Project, fakeAPIdata);
 
 export class ProjectState extends State<Project> {
-    private projects: Project[] = [];
+    private projects: Project[];
     private static instance: ProjectState; //singleton pattern
+
+    get current() {
+        return this.projects.slice();
+    }
 
     private constructor() {
         super();
+        this.projects = loadedProjects.length > 0 ? [...loadedProjects] : [];
+        this.updateProjectListeners();
     }
 
     //singleton pattern
@@ -43,7 +52,7 @@ export class ProjectState extends State<Project> {
     }
 
     private updateProjectListeners() {
-        this.updateListeners(this.projects.slice());
+        this.updateListeners(this.current);
     }
 }
 
