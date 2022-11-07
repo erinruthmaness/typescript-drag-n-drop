@@ -1,5 +1,9 @@
+import _ from "lodash";
+
 import { State } from "../models/state";
 import { Project, ProjectStatus } from "../models/project";
+
+// declare var _: any;  //if you can't install @types but you know the js will work
 
 export class ProjectState extends State<Project> {
     private projects: Project[] = [];
@@ -18,7 +22,13 @@ export class ProjectState extends State<Project> {
     }
 
     addProject(title: string, description: string, numPeople: number) {
-        const newProject = new Project(Math.random().toString(), title, description, numPeople, ProjectStatus.Active);
+        const newProject = new Project(
+            _.random(0, 999).toString(),
+            title,
+            description,
+            numPeople,
+            ProjectStatus.Active
+        );
 
         this.projects.push(newProject);
         this.updateProjectListeners();
