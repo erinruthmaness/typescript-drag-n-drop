@@ -1,7 +1,7 @@
-import { Component } from "./base-component.js";
-import { autobind } from "../decorators/autobind.js";
-import { validateUserInput, ValidationParams } from "../util/validation.js";
-import { projectsStore } from "../store/project.js";
+import { Component } from "./base-component";
+import { autobind } from "../decorators/autobind";
+import { validateUserInput, ValidationParams } from "../util/validation";
+import { projectsStore } from "../store/project";
 
 //main form class
 export class MainForm extends Component<HTMLDivElement, HTMLFormElement> {
